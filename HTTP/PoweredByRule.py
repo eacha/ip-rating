@@ -8,7 +8,6 @@ class PoweredByRule(Rules.Rules):
     def apply_rule(self, obj, score):
         try:
             obj[self.port][self.protocol]['get']['headers']['x_powered_by']
+            score.partial_scores.add(60)
         except KeyError:
             score.partial_scores.add(100)
-
-        score.partial_scores.add(60)
