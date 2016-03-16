@@ -7,7 +7,7 @@ class PoweredByRule(Rules.Rules):
 
     def apply_rule(self, obj, score):
         try:
-            obj[self.port][self.http]['get']['headers']['x_powered_by']
+            obj[self.port][self.protocol]['get']['headers']['x_powered_by']
         except KeyError:
             score.partial_scores.add(100)
 

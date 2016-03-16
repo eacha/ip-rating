@@ -7,7 +7,7 @@ class ServerRule(Rules.Rules):
 
     def apply_rule(self, obj, score):
         try:
-            obj[self.port][self.http]['get']['headers']['server']
+            obj[self.port][self.protocol]['get']['headers']['server']
         except KeyError:
             score.partial_scores.add(100)
 
