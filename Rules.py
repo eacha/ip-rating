@@ -7,6 +7,9 @@ class Score(object):
         self.trim = self.MAX_SCORE
         self.partial_scores = list()
 
+    def add_score(self, score):
+        self.partial_scores.add(score)
+
     def calc_avg(self):
         if len(self.partial_scores) == 0:
             return
