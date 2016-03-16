@@ -1,7 +1,7 @@
 import Rules
 
 
-class MaxTLSVersion(Rules.Rules):
+class MaxTLSVersionRule(Rules.Rules):
     port = '443'
     protocol = 'https'
 
