@@ -1,16 +1,16 @@
-import Rules
+from HTTP import HTTPRule
 
 
-class Authenticate(Rules.Rules):
+class Authenticate(HTTPRule.HTTPRule):
     port = '80'
     protocol = 'http'
 
     def apply_rule(self, obj, score):
         try:
-            obj[self.port][self.protocol]['get']['headers']['www_authenticate']
-            score.partial_scores.add(0)
+            obj['www_authenticate']
+            score.add_score(0)
             score.set_trim(0)
         except KeyError:
-            score.partial_scores.add(100)
+            score.add_score(100)
 
 
