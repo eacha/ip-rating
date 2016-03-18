@@ -2,8 +2,6 @@ import Rules
 
 
 class MaxTLSVersionRule(Rules.Rules):
-    port = '443'
-    protocol = 'https'
 
     # version name -> (score, trim)
     TLS_VERSION = {
@@ -16,8 +14,8 @@ class MaxTLSVersionRule(Rules.Rules):
 
     def apply_rule(self, obj, score):
         try:
-            version = obj[self.port][self.protocol]['version']
+            version = obj['tls_version']
             score.add_score(self.TLS_VERSION[version].first())
             score.set_trim(self.TLS_VERSION[version].second())
         except KeyError:
-            return
+            score.add_score(0)

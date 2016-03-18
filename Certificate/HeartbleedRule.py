@@ -1,16 +1,12 @@
 import Rules
 
 
-class TrustedRule(Rules.Rules):
-    port = '443'
-    protocol = 'https'
+class HeartbleedRule(Rules.Rules):
 
     def apply_rule(self, obj, score):
         try:
-            if obj[self.port][self.protocol]['tls']['validation']['browser_trusted']:
-                score.add_score(100)
-            else:
-                score.add_score(75)
-                score.set_trim(75)
+            if obj['heartbleed_vulnerable']:
+                score.add_score(0)
+                score.set_trim(0)
         except KeyError:
             return
