@@ -1,10 +1,10 @@
 import Rules
 
 
-class CertificateRules(Rules.Rules):
+class CertificateRule(Rules.Rules):
 
     def __init__(self):
-        super(CertificateRules, self).__init__()
+        super(CertificateRule, self).__init__()
 
     @classmethod
     def all_subclasses(cls):

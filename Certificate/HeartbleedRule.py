@@ -1,7 +1,7 @@
-import Rules
+from Certificate import CertificateRule
 
 
-class HeartbleedRule(Rules.Rules):
+class HeartbleedRule(CertificateRule.CertificateRule):
 
     def apply_rule(self, obj, score):
         try:

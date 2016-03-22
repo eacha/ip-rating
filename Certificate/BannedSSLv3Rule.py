@@ -1,7 +1,7 @@
-import Rules
+from Certificate import CertificateRule
 
 
-class BannedSSLv3Rule(Rules.Rules):
+class BannedSSLv3Rule(CertificateRule.CertificateRule):
 
     def apply_rule(self, obj, score):
         try:

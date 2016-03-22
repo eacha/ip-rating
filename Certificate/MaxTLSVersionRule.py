@@ -1,7 +1,7 @@
-import Rules
+from Certificate import CertificateRule
 
 
-class MaxTLSVersionRule(Rules.Rules):
+class MaxTLSVersionRule(CertificateRule.CertificateRule):
 
     # version name -> (score, trim)
     TLS_VERSION = {
@@ -15,7 +15,7 @@ class MaxTLSVersionRule(Rules.Rules):
     def apply_rule(self, obj, score):
         try:
             version = obj['tls_version']
-            score.add_score(self.TLS_VERSION[version].first())
-            score.set_trim(self.TLS_VERSION[version].second())
+            score.add_score(self.TLS_VERSION[version][0])
+            score.set_trim(self.TLS_VERSION[version][1])
         except KeyError:
-            score.add_score(0)
+            return

@@ -1,7 +1,7 @@
-import Rules
+from Certificate import CertificateRule
 
 
-# class BannedSSLv2Rule(Rules.Rules):
+# class BannedSSLv2Rule(CertificateRule.CertificateRule):
 #     port = '443'
 #     protocol = 'https'
 #

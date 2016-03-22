@@ -1,7 +1,7 @@
-import Rules
+from Certificate import CertificateRule
 
 
-class TrustedRule(Rules.Rules):
+class TrustedRule(CertificateRule.CertificateRule):
 
     def apply_rule(self, obj, score):
         try:
@@ -11,4 +11,4 @@ class TrustedRule(Rules.Rules):
                 score.add_score(75)
                 score.set_trim(75)
         except KeyError:
-            score.add_score(0)
+            return
