@@ -7,7 +7,7 @@ class HeartbleedRule(CertificateRule.CertificateRule):
         try:
             if obj['heartbleed_vulnerable']:
                 score.add_score(0)
-                score.set_trim(0)
+                score.set_capped(0)
             else:
                 score.add_score(100)
         except KeyError:

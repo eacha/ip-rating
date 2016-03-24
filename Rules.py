@@ -3,7 +3,7 @@ class Score(object):
     MIN_SCORE = 0
 
     def __init__(self):
-        self.trim = self.MAX_SCORE
+        self.capped = self.MAX_SCORE
         self.partial_scores = list()
 
     def add_score(self, score):
@@ -20,13 +20,13 @@ class Score(object):
         final_score /= float(len(self.partial_scores))
         return self.trim_score(final_score)
 
-    def set_trim(self, trim):
-        if trim < self.trim:
-            self.trim = trim
+    def set_capped(self, trim):
+        if trim < self.capped:
+            self.capped = trim
 
     def trim_score(self, score):
-        if score > self.trim:
-            return self.trim
+        if score > self.capped:
+            return self.capped
         return score
 
     def pprint(self):

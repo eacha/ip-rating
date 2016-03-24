@@ -7,6 +7,6 @@ class BannedSSLv2Rule(CertificateRule.CertificateRule):
         try:
             if obj['ssl_2_support']:
                 score.add_score(0)
-                score.set_trim(0)
+                score.set_capped(0)
         except KeyError:
             return

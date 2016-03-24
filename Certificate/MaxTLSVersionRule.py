@@ -16,6 +16,6 @@ class MaxTLSVersionRule(CertificateRule.CertificateRule):
         try:
             version = obj['tls_version']
             score.add_score(self.TLS_VERSION[version][0])
-            score.set_trim(self.TLS_VERSION[version][1])
+            score.set_capped(self.TLS_VERSION[version][1])
         except KeyError:
             return
