@@ -62,6 +62,7 @@ if __name__ == '__main__':
             append_if_not_none(country, http(json_line))
 
         if args.certificate:
+            print json_line['ip'] + ' ' + str(certificate(json_line))
             append_if_not_none(country, certificate(json_line))
 
     print avg(country)
