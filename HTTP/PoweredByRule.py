@@ -4,8 +4,9 @@ from HTTP import HTTPRule
 class PoweredByRule(HTTPRule.HTTPRule):
 
     def apply_rule(self, obj, score):
-        try:
-            obj['x_powered_by']
+        x_powered_by = obj.get('x_powered_by')
+
+        if x_powered_by:
             score.add_score(50)
-        except KeyError:
+        else:
             score.add_score(100)
