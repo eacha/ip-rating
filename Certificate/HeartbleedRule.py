@@ -11,4 +11,5 @@ class HeartbleedRule(CertificateRule.CertificateRule):
             else:
                 score.add_score(100)
         except KeyError:
+            # Heartbeat disable
             score.add_score(100)
