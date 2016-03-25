@@ -2,8 +2,6 @@ from HTTP import HTTPRule
 
 
 class PoweredByRule(HTTPRule.HTTPRule):
-    port = '80'
-    protocol = 'http'
 
     def apply_rule(self, obj, score):
         try:
