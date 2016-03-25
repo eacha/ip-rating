@@ -8,7 +8,7 @@ class TrustedRule(CertificateRule.CertificateRule):
             if obj['trusted']:
                 score.add_score(100)
             else:
-                score.add_score(0)
-                score.set_capped(0)
+                score.add_score(50)
+                score.set_capped(50)
         except KeyError:
             return

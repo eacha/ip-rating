@@ -6,8 +6,8 @@ class MaxTLSVersionRule(CertificateRule.CertificateRule):
     # version name -> (score, trim)
     TLS_VERSION = {
         'TLSv1.2': (100, 100),
-        'TLSv1.1': (90, 90),
-        'TLSv1.0': (50, 50),
+        'TLSv1.1': (80, 65),
+        'TLSv1.0': (65, 65),
         'SSLv3.0': (0, 0),
         'SSLv2.0': (0, 0)
     }
