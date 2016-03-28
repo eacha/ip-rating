@@ -63,7 +63,7 @@ def download_file(job_answer, file_name):
     return False
 
 
-def http_rate(input_filename):
+def rate(rules, input_filename):
     input_file = open(input_filename, 'r')
     output_file = open(os.path.abspath(os.path.dirname(input_file.name)) +
                        '/rated_' + os.path.basename(input_file.name), 'w')
@@ -71,7 +71,7 @@ def http_rate(input_filename):
 
     for line in input_file:
         json_line = json.loads(line)
-        subclasses = HTTPRule.all_subclasses()
+        subclasses = rules.all_subclasses()
         score = Score()
 
         for sub in subclasses:
@@ -91,20 +91,19 @@ def http_rate(input_filename):
     return avg(country)
 
 
-def certificate(data):
-    subclasses = CertificateRule.all_subclasses()
-    score = Score()
-
-    for sub in subclasses:
-        sub().apply_rule(data, score)
-    return score.calc_avg()
+def http_rate(input_filename):
+    return rate(HTTPRule, input_filename)
 
 
-def export_data(export_country_code):
+def certificate_rate(input_filename):
+    return rate(CertificateRule, input_filename)
+
+
+def export_data(query):
     export = CensysExport()
-    job = export.new_job(HTTP_QUERY.format(export_country_code))
-    return export.check_job_loop(job['job_id'])
-
+    job = export.new_job(query)
+    job_response = export.check_job_loop(job['job_id'])
+    return download_file(job_response, HTTP_DOWNLOAD_NAME.format(country_code.lower()))
 
 if __name__ == '__main__':
     args = argument_parser()
@@ -113,16 +112,12 @@ if __name__ == '__main__':
         if args.http:
             print http_rate(args.input)
 
-            # if args.certificate:
-            #         append_if_not_none(country, certificate(json_line))
+        if args.certificate:
+            print certificate_rate(args.input)
     else:
         make_dir(FOLDER_NAME)
 
         for country_code in ['CO', 'PY']:
-            response = export_data()
-            if download_file(response, HTTP_DOWNLOAD_NAME.format(country_code.lower())) is False:
-                continue
-
-            if args.http:
-                print country_code + ': ' + str(
-                    http_rate(FOLDER_NAME + '/' + HTTP_DOWNLOAD_NAME.format(country_code.lower())))
+            if args.http and export_data(HTTP_QUERY.format(country_code)):
+                print country_code + ': ' + \
+                      str(http_rate(FOLDER_NAME + '/' + HTTP_DOWNLOAD_NAME.format(country_code.lower())))
