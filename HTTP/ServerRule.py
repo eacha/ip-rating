@@ -1,7 +1,7 @@
-from HTTP import HTTPRule
+from HTTP.HTTPRule import HTTPRule
 
 
-class ServerRule(HTTPRule.HTTPRule):
+class ServerRule(HTTPRule):
 
     def apply_rule(self, obj, score):
         server = obj.get('server')

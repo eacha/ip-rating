@@ -1,7 +1,7 @@
-import Rules
+from Rules import Rules
 
 
-class HTTPRule(Rules.Rules):
+class HTTPRule(Rules):
 
     def __init__(self):
         super(HTTPRule, self).__init__()

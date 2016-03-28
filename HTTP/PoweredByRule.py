@@ -1,7 +1,7 @@
-from HTTP import HTTPRule
+from HTTP.HTTPRule import HTTPRule
 
 
-class PoweredByRule(HTTPRule.HTTPRule):
+class PoweredByRule(HTTPRule):
 
     def apply_rule(self, obj, score):
         x_powered_by = obj.get('x_powered_by')

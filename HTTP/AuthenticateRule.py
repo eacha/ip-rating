@@ -1,7 +1,7 @@
-from HTTP import HTTPRule
+from HTTP.HTTPRule import HTTPRule
 
 
-class Authenticate(HTTPRule.HTTPRule):
+class Authenticate(HTTPRule):
 
     def apply_rule(self, obj, score):
         www_authenticate = obj.get('www_authenticate')
