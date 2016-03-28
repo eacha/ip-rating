@@ -357,10 +357,12 @@ class Country(object):
         "Mozambique"
     ]
 
-    def get_name_from_code(self, country_code):
-        country_code_index = self.COUNTRY_CODE.index(country_code)
-        return self.COUNTRY_NAME[country_code_index]
+    @staticmethod
+    def get_name_from_code(country_code):
+        country_code_index = Country.COUNTRY_CODE.index(country_code)
+        return Country.COUNTRY_NAME[country_code_index]
 
-    def get_code_from_name(self, country_name):
-        country_name_index = self.COUNTRY_NAME.index(country_name)
-        return self.COUNTRY_CODE[country_name_index]
+    @staticmethod
+    def get_code_from_name(country_name):
+        country_name_index = Country.COUNTRY_NAME.index(country_name)
+        return Country.COUNTRY_CODE[country_name_index]
