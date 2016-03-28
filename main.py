@@ -1,12 +1,10 @@
 import argparse
 import json
-
 import time
 import urllib
 import os
-
 from censys.export import CensysExport
-
+from censys.query import CensysQuery
 import keys
 from HTTP import *
 from Certificate import *
@@ -20,8 +18,29 @@ os.environ["CENSYS_API_SECRET"] = keys.CENSYS_API_SECRET
 
 HTTP_QUERY = "SELECT ip, p80.http.get.headers.server server, p80.http.get.headers.www_authenticate www_authenticate, " \
              "p80.http.get.headers.x_powered_by x_powered_by, p80.http.get.status_code status_code " \
-             "FROM ipv4.20160316 WHERE location.country_code = '{}' AND NOT (p80.http.get.status_code IS NULL)"
+             "FROM {0} WHERE location.country_code = '{1}' AND NOT (p80.http.get.status_code IS NULL)"
 HTTP_DOWNLOAD_NAME = 'http-{0}.json'
+CERTIFICATE_QUERY = "SELECT flatter_table.ip ip, flatter_table.tls_version tls_version, flatter_table.trusted trusted, flatter_table.heartbleed_vulnerable heartbleed_vulnerable, " \
+                    "flatter_table.ssl_3_support ssl_3_support, flatter_table.ssl_2_support ssl_2_support, flatter_table.cipher_suite cipher_suite, " \
+                    "nested_table.chain_rsa_public_key_length chain_rsa_public_key_length, nested_table.chain_signature_algorithm chain_signature_algorithm, " \
+                    "FROM (SELECT mid.ip ip, mid.tls_version tls_version, mid.trusted trusted, mid.heartbleed_vulnerable heartbleed_vulnerable, mid.ssl_3_support ssl_3_support, " \
+                    "ssl2.ssl_2_support ssl_2_support, mid.cipher_suite cipher_suite FROM (SELECT country.ip ip, country.p443.https.tls.version tls_version, " \
+                    "country.p443.https.tls.validation.browser_trusted trusted, country.p443.https.heartbleed.heartbleed_vulnerable heartbleed_vulnerable, " \
+                    "NOT(ssl3.data.tls.server_hello.cipher_suite.hex IS NULL) ssl_3_support, country.p443.https.tls.cipher_suite.name cipher_suite, " \
+                    "FROM (SELECT * FROM {0} WHERE location.country_code = '{2}' AND NOT (p443.https.tls.version IS NULL)) AS country LEFT OUTER JOIN {1} AS ssl3 " \
+                    "ON country.ip = ssl3.ip) AS mid JOIN (SELECT ip, p443.https.ssl_2.support ssl_2_support FROM {0} WHERE location.country_code = '{2}') AS ssl2 " \
+                    "ON mid.ip = ssl2.ip) AS flatter_table LEFT OUTER JOIN (SELECT table_rsa_public_key_length.ip ip, " \
+                    "table_rsa_public_key_length.chain_rsa_public_key_length chain_rsa_public_key_length, table_chain_signature_algorithm.chain_signature_algorithm, " \
+                    "chain_signature_algorithm FROM (SELECT ip, IFNULL(CONCAT(STRING(p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length), ',', " \
+                    "GROUP_CONCAT(STRING(p443.https.tls.chain.parsed.subject_key_info.rsa_public_key.length))), " \
+                    "STRING(p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length)) chain_rsa_public_key_length FROM {0} WHERE location.country_code = '{2}' " \
+                    "AND NOT (p443.https.tls.version IS NULL) GROUP BY ip, p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length) AS table_rsa_public_key_length " \
+                    "JOIN (SELECT ip, IFNULL(CONCAT(p443.https.tls.certificate.parsed.signature.signature_algorithm.name, ',', " \
+                    "GROUP_CONCAT(p443.https.tls.chain.parsed.signature_algorithm.name)), p443.https.tls.certificate.parsed.signature.signature_algorithm.name) " \
+                    "chain_signature_algorithm FROM {0} WHERE location.country_code = '{2}' AND NOT (p443.https.tls.version IS NULL) GROUP BY ip, " \
+                    "p443.https.tls.certificate.parsed.signature.signature_algorithm.name) AS table_chain_signature_algorithm " \
+                    "ON table_rsa_public_key_length.ip=table_chain_signature_algorithm.ip) AS nested_table ON flatter_table.ip=nested_table.ip"
+CERTIFICATE_DOWNLOAD_NAME = 'certificate-{0}.json'
 FOLDER_NAME = time.strftime('%Y-%m-%d')
 
 
@@ -63,7 +82,7 @@ def download_file(job_answer, file_name):
     return False
 
 
-def rate(rules, input_filename):
+def file_rate(rules, input_filename):
     input_file = open(input_filename, 'r')
     output_file = open(os.path.abspath(os.path.dirname(input_file.name)) +
                        '/rated_' + os.path.basename(input_file.name), 'w')
@@ -92,18 +111,20 @@ def rate(rules, input_filename):
 
 
 def http_rate(input_filename):
-    return rate(HTTPRule, input_filename)
+    return file_rate(HTTPRule, input_filename)
 
 
 def certificate_rate(input_filename):
-    return rate(CertificateRule, input_filename)
+    return file_rate(CertificateRule, input_filename)
 
 
-def export_data(query):
+def export_data(query, filename):
     export = CensysExport()
-    job = export.new_job(query)
+    job = export.new_job(query, flatten=True)
     job_response = export.check_job_loop(job['job_id'])
-    return download_file(job_response, HTTP_DOWNLOAD_NAME.format(country_code.lower()))
+    print job_response
+    return download_file(job_response, filename.format(country_code.lower()))
+
 
 if __name__ == '__main__':
     args = argument_parser()
@@ -117,7 +138,27 @@ if __name__ == '__main__':
     else:
         make_dir(FOLDER_NAME)
 
-        for country_code in ['CO', 'PY']:
-            if args.http and export_data(HTTP_QUERY.format(country_code)):
-                print country_code + ': ' + \
-                      str(http_rate(FOLDER_NAME + '/' + HTTP_DOWNLOAD_NAME.format(country_code.lower())))
+        for country_code in Country.COUNTRY_CODE:
+            if args.http:
+                query_set = CensysQuery()
+                success = export_data(
+                    HTTP_QUERY.format(query_set.get_series_details('ipv4')['tables'][-1], country_code),
+                    HTTP_DOWNLOAD_NAME
+                )
+
+                if success:
+                    print country_code + ': ' + \
+                          str(http_rate(FOLDER_NAME + '/' + HTTP_DOWNLOAD_NAME.format(country_code.lower())))
+
+            if args.certificate:
+                query_set = CensysQuery()
+                success = export_data(
+                    CERTIFICATE_QUERY.format(query_set.get_series_details('ipv4')['tables'][-1],
+                                             query_set.get_series_details('p443_https_ssl_3_full_ipv4')['tables'][-1],
+                                             country_code),
+                    CERTIFICATE_DOWNLOAD_NAME
+                )
+
+                if success:
+                    print country_code + ': ' + \
+                          str(certificate_rate(FOLDER_NAME + '/' + CERTIFICATE_DOWNLOAD_NAME.format(country_code.lower())))
