@@ -36,7 +36,7 @@ def http(data):
     score = Score()
 
     for sub in subclasses:
-        sub().apply_rule(json_line, score)
+        sub().apply_rule(data, score)
     return score.calc_avg()
 
 
@@ -45,7 +45,7 @@ def certificate(data):
     score = Score()
 
     for sub in subclasses:
-        sub().apply_rule(json_line, score)
+        sub().apply_rule(data, score)
     return score.calc_avg()
 
 
