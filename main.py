@@ -1,5 +1,6 @@
 import argparse
 import json
+
 import time
 import urllib
 import os
@@ -58,6 +59,8 @@ def download_file(job_answer, file_name):
     if job_answer['status'] == 'success':
         testfile = urllib.URLopener()
         testfile.retrieve(job_answer['download_paths'][0], FOLDER_NAME + '/' + file_name)
+        return True
+    return False
 
 
 def http_rate(input_filename):
@@ -97,6 +100,12 @@ def certificate(data):
     return score.calc_avg()
 
 
+def export_data(export_country_code):
+    export = CensysExport()
+    job = export.new_job(HTTP_QUERY.format(export_country_code))
+    return export.check_job_loop(job['job_id'])
+
+
 if __name__ == '__main__':
     args = argument_parser()
 
@@ -104,16 +113,16 @@ if __name__ == '__main__':
         if args.http:
             print http_rate(args.input)
 
-        # if args.certificate:
-        #         append_if_not_none(country, certificate(json_line))
+            # if args.certificate:
+            #         append_if_not_none(country, certificate(json_line))
     else:
         make_dir(FOLDER_NAME)
 
         for country_code in ['CO', 'PY']:
-            export = CensysExport()
-            job = export.new_job(HTTP_QUERY.format(country_code))
-            job_response = export.check_job_loop(job['job_id'])
-            download_file(job_response, HTTP_DOWNLOAD_NAME.format(country_code.lower()))
+            response = export_data()
+            if download_file(response, HTTP_DOWNLOAD_NAME.format(country_code.lower())) is False:
+                continue
 
             if args.http:
-                print country_code + ': ' + str(http_rate(FOLDER_NAME + '/' + HTTP_DOWNLOAD_NAME.format(country_code.lower())))
+                print country_code + ': ' + str(
+                    http_rate(FOLDER_NAME + '/' + HTTP_DOWNLOAD_NAME.format(country_code.lower())))
