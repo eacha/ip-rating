@@ -20,26 +20,36 @@ HTTP_QUERY = "SELECT ip, p80.http.get.headers.server server, p80.http.get.header
              "p80.http.get.headers.x_powered_by x_powered_by, p80.http.get.status_code status_code " \
              "FROM {0} WHERE autonomous_system.asn = {1} AND NOT (p80.http.get.status_code IS NULL)"
 HTTP_DOWNLOAD_NAME = 'http-as{0}.json'
-CERTIFICATE_QUERY = "SELECT flatter_table.ip ip, flatter_table.tls_version tls_version, flatter_table.trusted trusted, flatter_table.heartbleed_vulnerable heartbleed_vulnerable, " \
-                    "flatter_table.ssl_3_support ssl_3_support, flatter_table.ssl_2_support ssl_2_support, flatter_table.cipher_suite cipher_suite, " \
-                    "nested_table.chain_rsa_public_key_length chain_rsa_public_key_length, nested_table.chain_signature_algorithm chain_signature_algorithm, " \
-                    "FROM (SELECT mid.ip ip, mid.tls_version tls_version, mid.trusted trusted, mid.heartbleed_vulnerable heartbleed_vulnerable, mid.ssl_3_support ssl_3_support, " \
-                    "ssl2.ssl_2_support ssl_2_support, mid.cipher_suite cipher_suite FROM (SELECT country.ip ip, country.p443.https.tls.version tls_version, " \
-                    "country.p443.https.tls.validation.browser_trusted trusted, country.p443.https.heartbleed.heartbleed_vulnerable heartbleed_vulnerable, " \
-                    "NOT(ssl3.data.tls.server_hello.cipher_suite.hex IS NULL) ssl_3_support, country.p443.https.tls.cipher_suite.name cipher_suite, " \
-                    "FROM (SELECT * FROM {0} WHERE autonomous_system.asn = {2} AND NOT (p443.https.tls.version IS NULL)) AS country LEFT OUTER JOIN {1} AS ssl3 " \
-                    "ON country.ip = ssl3.ip) AS mid JOIN (SELECT ip, p443.https.ssl_2.support ssl_2_support FROM {0} WHERE autonomous_system.asn = {2}) AS ssl2 " \
-                    "ON mid.ip = ssl2.ip) AS flatter_table LEFT OUTER JOIN (SELECT table_rsa_public_key_length.ip ip, " \
-                    "table_rsa_public_key_length.chain_rsa_public_key_length chain_rsa_public_key_length, table_chain_signature_algorithm.chain_signature_algorithm, " \
-                    "chain_signature_algorithm FROM (SELECT ip, IFNULL(CONCAT(STRING(p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length), ',', " \
-                    "GROUP_CONCAT(STRING(p443.https.tls.chain.parsed.subject_key_info.rsa_public_key.length))), " \
-                    "STRING(p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length)) chain_rsa_public_key_length FROM {0} WHERE autonomous_system.asn = {2} " \
-                    "AND NOT (p443.https.tls.version IS NULL) GROUP BY ip, p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length) AS table_rsa_public_key_length " \
-                    "JOIN (SELECT ip, IFNULL(CONCAT(p443.https.tls.certificate.parsed.signature.signature_algorithm.name, ',', " \
-                    "GROUP_CONCAT(p443.https.tls.chain.parsed.signature_algorithm.name)), p443.https.tls.certificate.parsed.signature.signature_algorithm.name) " \
-                    "chain_signature_algorithm FROM {0} WHERE autonomous_system.asn = {2} AND NOT (p443.https.tls.version IS NULL) GROUP BY ip, " \
-                    "p443.https.tls.certificate.parsed.signature.signature_algorithm.name) AS table_chain_signature_algorithm " \
-                    "ON table_rsa_public_key_length.ip=table_chain_signature_algorithm.ip) AS nested_table ON flatter_table.ip=nested_table.ip"
+CERTIFICATE_QUERY = """SELECT
+  flatter_table.ip ip, flatter_table.tls_version tls_version, flatter_table.trusted trusted,
+  flatter_table.heartbleed_vulnerable heartbleed_vulnerable, flatter_table.ssl_2_support ssl_2_support,
+  flatter_table.cipher_suite cipher_suite,  nested_table.chain_rsa_public_key_length chain_rsa_public_key_length,
+  nested_table.chain_signature_algorithm chain_signature_algorithm
+FROM
+  (SELECT
+    country.ip ip, p443.https.tls.version tls_version, country.p443.https.tls.validation.browser_trusted trusted,
+    country.p443.https.heartbleed.heartbleed_vulnerable heartbleed_vulnerable, country.p443.https.tls.cipher_suite.name cipher_suite,
+    ssl2.ssl_2_support ssl_2_support
+  FROM
+    (SELECT * FROM {0} WHERE autonomous_system.asn = {1} AND NOT (p443.https.tls.version IS NULL)) as country
+    LEFT JOIN
+      (SELECT ip, p443.https.ssl_2.support ssl_2_support FROM {0} WHERE autonomous_system.asn = {1}) AS ssl2
+    ON
+      country.ip = ssl2.ip
+    ) as flatter_table
+  LEFT JOIN
+    (SELECT table_rsa_public_key_length.ip ip,
+    table_rsa_public_key_length.chain_rsa_public_key_length chain_rsa_public_key_length, table_chain_signature_algorithm.chain_signature_algorithm
+    chain_signature_algorithm FROM (SELECT ip, IFNULL(CONCAT(STRING(p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length), ',',
+    GROUP_CONCAT(STRING(p443.https.tls.chain.parsed.subject_key_info.rsa_public_key.length))),
+    STRING(p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length)) chain_rsa_public_key_length FROM {0} WHERE autonomous_system.asn = {1}
+    AND NOT (p443.https.tls.version IS NULL) GROUP BY ip, p443.https.tls.certificate.parsed.subject_key_info.rsa_public_key.length) AS table_rsa_public_key_length
+    JOIN (SELECT ip, IFNULL(CONCAT(p443.https.tls.certificate.parsed.signature.signature_algorithm.name, ',',
+    GROUP_CONCAT(p443.https.tls.chain.parsed.signature_algorithm.name)), p443.https.tls.certificate.parsed.signature.signature_algorithm.name)
+    chain_signature_algorithm FROM {0} WHERE autonomous_system.asn = {1} AND NOT (p443.https.tls.version IS NULL) GROUP BY ip,
+    p443.https.tls.certificate.parsed.signature.signature_algorithm.name) AS table_chain_signature_algorithm
+    ON table_rsa_public_key_length.ip=table_chain_signature_algorithm.ip) AS nested_table
+  ON flatter_table.ip=nested_table.ip"""
 CERTIFICATE_DOWNLOAD_NAME = 'certificate-{0}.json'
 FOLDER_NAME = time.strftime('%Y-%m-%d')
 
@@ -153,8 +163,7 @@ if __name__ == '__main__':
             if args.certificate:
                 query_set = CensysQuery()
                 success = export_data(
-                    CERTIFICATE_QUERY.format(query_set.get_series_details('ipv4')['tables'][-1],
-                                             query_set.get_series_details('p443_https_ssl_3_full_ipv4')['tables'][-1],
+                    CERTIFICATE_QUERY.format('ipv4.20160404',
                                              as_code),
                     CERTIFICATE_DOWNLOAD_NAME
                 )
